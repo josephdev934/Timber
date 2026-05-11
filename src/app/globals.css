@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+:root {
+  /* LIGHT MODE TOKENS */
+  --color-bg-page: #FAF8F6;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #F2EEE9;
+  --color-border: #F2EEE9;
+  --color-text-primary: #2C2420;
+  --color-text-muted: #8C7B6E;
+  --color-placeholder: #D1C7BD;
+  --color-brand: #775839;
+  --color-brand-btn-bg: #775839;
+  --color-brand-btn-text: #FFFFFF;
+  --color-bubble-sent-bg: #775839;
+  --color-bubble-sent-text: #FFFFFF;
+  --color-bubble-recv-bg: #F2EEE9;
+  --color-bubble-recv-text: #2C2420;
+  --color-skeleton-from: #F2EEE9;
+  --color-skeleton-to: #E8E2DC;
+  --color-fab-shadow: #77583944;
+  --color-input-bg: #F9F7F5;
+  --color-input-border: #F2EEE9;
+
+  /* ALIASES FOR ADMIN DASHBOARD */
+  --color-bg: var(--color-bg-page);
+  --color-surface: var(--color-bg-surface);
+  --color-elevated: var(--color-bg-elevated);
+  --color-text: var(--color-text-primary);
+  --color-muted: var(--color-text-muted);
+}
+
+[data-theme="dark"] {
+  /* DARK MODE TOKENS */
+  --color-bg-page: #141210;
+  --color-bg-surface: #1E1A17;
+  --color-bg-elevated: #27211C;
+  --color-border: #3A3028;
+  --color-text-primary: #F0EBE5;
+  --color-text-muted: #A08C7A;
+  --color-placeholder: #5C4A3A;
+  --color-brand: #C4966A;
+  --color-brand-btn-bg: #5C3F22;
+  --color-brand-btn-text: #F0EBE5;
+  --color-bubble-sent-bg: #5C3F22;
+  --color-bubble-sent-text: #F0EBE5;
+  --color-bubble-recv-bg: #27211C;
+  --color-bubble-recv-text: #F0EBE5;
+  --color-skeleton-from: #2C2420;
+  --color-skeleton-to: #3A3028;
+  --color-fab-shadow: #00000055;
+  --color-input-bg: #1E1A17;
+  --color-input-border: #3A3028;
+
+  /* ALIASES FOR ADMIN DASHBOARD */
+  --color-bg: var(--color-bg-page);
+  --color-surface: var(--color-bg-surface);
+  --color-elevated: var(--color-bg-elevated);
+  --color-text: var(--color-text-primary);
+  --color-muted: var(--color-text-muted);
+}
+
+@theme inline {
+  /* Map CSS variables to Tailwind colors */
+  --color-page: var(--color-bg-page);
+  --color-surface: var(--color-bg-surface);
+  --color-elevated: var(--color-bg-elevated);
+  --color-timber-border: var(--color-border);
+  --color-timber-text: var(--color-text-primary);
+  --color-timber-muted: var(--color-text-muted);
+  --color-timber-placeholder: var(--color-placeholder);
+  --color-timber-brand: var(--color-brand);
+  --color-timber-btn-bg: var(--color-brand-btn-bg);
+  --color-timber-btn-text: var(--color-brand-btn-text);
+  --color-timber-bubble-sent: var(--color-bubble-sent-bg);
+  --color-timber-bubble-sent-text: var(--color-bubble-sent-text);
+  --color-timber-bubble-recv: var(--color-bubble-recv-bg);
+  --color-timber-bubble-recv-text: var(--color-bubble-recv-text);
+  --color-timber-input-bg: var(--color-input-bg);
+  --color-timber-input-border: var(--color-input-border);
+  
+  /* Preserve UI shapes */
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 2.5rem;
+  
+  /* Animations */
+  --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { background-color: var(--color-skeleton-from); }
+  50% { background-color: var(--color-skeleton-to); }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg-page);
+    color: var(--color-text-primary);
+    transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease;
+  }
+
+  /* Universal 300ms transition rule for theme properties */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 10px;
+}
