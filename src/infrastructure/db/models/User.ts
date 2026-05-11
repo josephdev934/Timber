@@ -14,6 +14,11 @@ import { User } from '../../../domain/entities/User';
 // while satisfying the pure entity requirements whenever materialized.
 export interface IUserDocument extends Document, Omit<User, 'id'> {
   // 'id' is naturally projected via Mongoose's toJSON transformer
+  // Phase 4 moderation fields (not in core domain entity)
+  isBanned: boolean;
+  banReason?: string;
+  blockedUsers: mongoose.Types.ObjectId[] | any[];
+  reportCount: number;
 }
 
 /**

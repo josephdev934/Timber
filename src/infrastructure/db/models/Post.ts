@@ -20,6 +20,7 @@ export interface IPostDocument extends Document {
   media: any[];
   images: string[];
   video?: string;
+  isFlagged?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

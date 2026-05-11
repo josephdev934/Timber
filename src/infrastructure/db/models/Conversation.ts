@@ -19,6 +19,7 @@ export interface IConversationDocument extends Document {
   participants: mongoose.Types.ObjectId[] | any[];
   removedParticipants: mongoose.Types.ObjectId[] | any[];
   hiddenBy: mongoose.Types.ObjectId[] | any[];
+  status: 'active' | 'archived';
   createdAt: Date;
   updatedAt: Date;
 }

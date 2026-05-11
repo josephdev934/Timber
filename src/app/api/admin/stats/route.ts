@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     // 3. Extract activeNow from Socket.IO Server instance
     const io = socketServer.getIO();
-    const activeNow = io ? io.sockets.size : 0;
+    const activeNow = io ? io.engine.clientsCount : 0;
 
     // 4. Parallel Aggregation
     const [

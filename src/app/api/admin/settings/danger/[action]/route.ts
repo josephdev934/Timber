@@ -11,11 +11,11 @@ import { PlatformSettingsService } from '@/application/services/admin/PlatformSe
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { action: string } }
+  { params }: { params: Promise<{ action: string }> }
 ) {
   try {
     const { userId: adminId } = await protectRoute(req, ['admin']);
-    const action = params.action;
+    const { action } = await params;
 
     switch (action) {
       case 'wipe-data':

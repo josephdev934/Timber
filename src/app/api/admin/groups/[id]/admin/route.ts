@@ -9,8 +9,9 @@ import { GroupService } from '@/application/services/admin/GroupService';
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { userId: adminId } = await protectRoute(req, ['admin']);
     const { newAdminId } = await req.json();
@@ -19,7 +20,7 @@ export async function PATCH(
       return NextResponse.json({ error: "newAdminId is required" }, { status: 400 });
     }
 
-    await GroupService.transferAdmin(params.id, newAdminId, adminId);
+    await GroupService.transferAdmin(id, newAdminId, adminId);
 
     return NextResponse.json({ success: true, message: "Group admin transferred" });
   } catch (err: any) {

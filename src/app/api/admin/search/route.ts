@@ -52,8 +52,9 @@ export async function GET(req: NextRequest) {
     // Assuming GroupModel exists based on previous file listings
     let groups: any[] = [];
     try {
-        const { GroupModel } = await import('@/infrastructure/db/models/Group');
-        groups = await GroupModel.find({ 
+        const { ConversationModel } = await import('@/infrastructure/db/models/Conversation');
+        groups = await ConversationModel.find({ 
+          type: 'group',
           $or: [
             { name: regex },
             { description: regex }

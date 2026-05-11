@@ -18,6 +18,7 @@ export interface IMessageDocument extends Document {
   replyTo?: mongoose.Types.ObjectId | any;
   mentions?: mongoose.Types.ObjectId[] | any[];
   isSystemMessage: boolean;
+  isFlagged: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

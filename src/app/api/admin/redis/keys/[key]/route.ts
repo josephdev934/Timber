@@ -12,11 +12,11 @@ import { AuditLogService } from '@/application/services/admin/AuditLogService';
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { key: string } }
+  { params }: { params: Promise<{ key: string }> }
 ) {
   try {
     const { userId: adminId } = await protectRoute(req, ['admin']);
-    const key = params.key;
+    const { key } = await params;
 
     if (!key) {
       return NextResponse.json({ error: "Key parameter is required" }, { status: 400 });

@@ -11,12 +11,13 @@ import { AdminNotificationService } from '@/application/services/admin/AdminNoti
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { userId: adminId } = await protectRoute(req, ['admin']);
 
-    const success = await AdminNotificationService.resendNotification(params.id, adminId);
+    const success = await AdminNotificationService.resendNotification(id, adminId);
 
     if (success) {
       return NextResponse.json({ success: true, message: "Notification resent successfully" });

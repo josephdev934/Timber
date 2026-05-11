@@ -8,12 +8,13 @@ import { connectToDatabase } from '@/infrastructure/db/connect';
  * ADMIN API - DELETE /api/admin/posts/[id]
  * ==========================================
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     await protectRoute(req, ['admin']);
     await connectToDatabase();
 
-    const result = await PostModel.findByIdAndDelete(params.id);
+    const result = await PostModel.findByIdAndDelete(id);
     if (!result) return NextResponse.json({ error: 'Post not found' }, { status: 404 });
 
     // Also decrement total post count in stats cache if needed, but for now we'll let the next sync handle it.

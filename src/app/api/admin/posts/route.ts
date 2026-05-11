@@ -76,23 +76,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-/**
- * ==========================================
- * ADMIN API - DELETE /api/admin/posts/:id
- * ==========================================
- * Force delete any post (admin only).
- */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    await protectRoute(req, ['admin']);
-    await connectToDatabase();
-
-    const result = await PostModel.findByIdAndDelete(params.id);
-    if (!result) return NextResponse.json({ error: 'Post not found' }, { status: 404 });
-
-    return NextResponse.json({ message: 'Post deleted successfully' });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}

@@ -11,8 +11,9 @@ import { AuditLogService } from '@/application/services/admin/AuditLogService';
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { userId: adminId } = await protectRoute(req, ['admin']);
     
@@ -36,7 +37,7 @@ export async function PATCH(
     }
 
     await connectToDatabase();
-    const group = await ConversationModel.findByIdAndUpdate(params.id, {
+    const group = await ConversationModel.findByIdAndUpdate(id, {
       groupPhoto: photoUrl,
       groupPhotoUpdatedBy: adminId,
       groupPhotoUpdatedAt: new Date()
@@ -47,7 +48,7 @@ export async function PATCH(
         adminId,
         action: 'CHANGE_SETTINGS',
         targetType: 'Group',
-        targetId: params.id,
+        targetId: id,
         metadata: { action: 'UPDATE_PHOTO', photoUrl }
       });
     }

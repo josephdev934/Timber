@@ -17,6 +17,7 @@ interface MessageBubbleProps {
   };
   onReply?: (msg: any) => void;
   onEdit?: (msg: any) => void;
+  onDelete?: (id: string) => void;
   onReport?: (id: string, text: string, senderId: string) => void;
   mediaUrl?: string;
   mediaType?: 'image' | 'video';

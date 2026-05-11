@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     // 3. Scan for a sample of keys (NEVER use keys '*')
     // SCAN returns [cursor, [keys]]
-    const scanResult = await redis.scan(0, { MATCH: '*', COUNT: 100 });
+    const scanResult = await redis.scan("0", { MATCH: '*', COUNT: 100 });
     const keys = scanResult.keys || [];
 
     return NextResponse.json({

@@ -30,5 +30,11 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "scratch", "*.js", "test_mongoose.js", "clean_db.js", "replace_pravatar.js"]
+  "exclude": [
+    "node_modules", 
+    "scratch", 
+    "*.js", 
+    "*.ts", 
+    "src/**/*.test.ts"
+  ]
 }

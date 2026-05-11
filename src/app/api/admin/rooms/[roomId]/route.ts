@@ -13,12 +13,12 @@ import { connectToDatabase } from '@/infrastructure/db/connect';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
     await protectRoute(req, ['admin']);
 
-    const roomId = params.roomId;
+    const { roomId } = await params;
     const io = socketServer.getIO();
 
     if (!io) {
