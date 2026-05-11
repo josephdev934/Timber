@@ -30,35 +30,37 @@ export interface EnvConfig {
 
 /**
  * Validates and loads environment variables into a typed object.
- * Uses lazy evaluation so it only runs at runtime (inside API handlers),
- * NOT during Next.js static build analysis — which prevents build crashes
- * on platforms like Netlify/Vercel where env vars aren't available at build time.
+ *
+ * Key behaviour: during `next build` (NEXT_PHASE = phase-production-build),
+ * Next.js collects page data by importing all server modules — but real env
+ * vars are NOT present yet. We detect this and return safe stub values so
+ * the build can complete. Real validation only runs at request time.
  */
 const loadEnv = (): EnvConfig => {
-  // 1. Extract values from process.env
-  const MONGODB_URI = process.env.MONGODB_URI;
-  const JWT_SECRET = process.env.JWT_SECRET;
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || process.env.URL || 'http://localhost:3000';
+  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
-  // 2. Handle Optional Variables with Defaults
+  const MONGODB_URI = process.env.MONGODB_URI || '';
+  const JWT_SECRET = process.env.JWT_SECRET || '';
+  const APP_URL =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    process.env.URL ||
+    'http://localhost:3000';
   const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-  const SALT_ROUNDS_RAW = process.env.SALT_ROUNDS || '10';
+  const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS || '10', 10);
   const NODE_ENV = process.env.NODE_ENV || 'development';
-  const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || '';
+  const CLOUDINARY_CLOUD_NAME =
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    process.env.CLOUDINARY_CLOUD_NAME ||
+    '';
   const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
   const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
 
-  // 3. Strict Validation — only throw at runtime, not during build static analysis
-  if (!MONGODB_URI) {
-    throw new Error('❌ FATAL: Missing environment variable MONGODB_URI');
+  // Only throw during actual runtime — not during `next build`
+  if (!isBuildPhase) {
+    if (!MONGODB_URI) throw new Error('❌ FATAL: Missing environment variable MONGODB_URI');
+    if (!JWT_SECRET) throw new Error('❌ FATAL: Missing environment variable JWT_SECRET');
   }
-
-  if (!JWT_SECRET) {
-    throw new Error('❌ FATAL: Missing environment variable JWT_SECRET');
-  }
-
-  // 4. Transform and Finalize types
-  const SALT_ROUNDS = parseInt(SALT_ROUNDS_RAW, 10);
 
   return {
     MONGODB_URI,
@@ -69,22 +71,9 @@ const loadEnv = (): EnvConfig => {
     NODE_ENV,
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY,
-    CLOUDINARY_API_SECRET
+    CLOUDINARY_API_SECRET,
   };
 };
 
-/**
- * Lazy singleton — evaluated on first access, not at module import time.
- * This prevents the build from crashing when env vars aren't present
- * during static page generation.
- */
-let _env: EnvConfig | null = null;
-
-export const env: EnvConfig = new Proxy({} as EnvConfig, {
-  get(_target, prop: string) {
-    if (!_env) {
-      _env = loadEnv();
-    }
-    return (_env as any)[prop];
-  }
-});
+// Eagerly evaluate — safe now because we skip validation during build phase
+export const env = loadEnv();
