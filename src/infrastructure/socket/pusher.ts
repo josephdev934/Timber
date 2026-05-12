@@ -10,12 +10,12 @@ import { env } from '../../config/env';
  * ==========================================
  */
 
-// These will be loaded from your Netlify Environment Variables
+// Use the validated environment config
 const pusherConfig = {
-  appId: process.env.PUSHER_APP_ID || '',
-  key: process.env.NEXT_PUBLIC_PUSHER_KEY || process.env.PUSHER_KEY || '',
-  secret: process.env.PUSHER_SECRET || '',
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2',
+  appId: env.PUSHER_APP_ID,
+  key: env.PUSHER_KEY,
+  secret: env.PUSHER_SECRET,
+  cluster: env.PUSHER_CLUSTER,
   useTLS: true,
 };
 

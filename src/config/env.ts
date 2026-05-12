@@ -22,9 +22,9 @@ export interface EnvConfig {
   REDIS_URL: string;
   // Optional: Password Hashing Salt Rounds (defaults to 10)
   SALT_ROUNDS: number;
-  // Optional: Current Execution Environment (defaults to development)
+  // Metadata
   NODE_ENV: string;
-  // Cloudinary Configuration
+  // Optional: Cloudinary Configuration
   CLOUDINARY_CLOUD_NAME: string;
   CLOUDINARY_API_KEY: string;
   CLOUDINARY_API_SECRET: string;
@@ -36,7 +36,7 @@ export interface EnvConfig {
 }
 
 /**
- * Validates and loads environment variables into a typed object.
+ * Loads and validates environment variables.
  *
  * Key behaviour: during `next build` (NEXT_PHASE = phase-production-build),
  * Next.js collects page data by importing all server modules — but real env
@@ -44,6 +44,7 @@ export interface EnvConfig {
  * the build can complete. Real validation only runs at request time.
  */
 const loadEnv = (): EnvConfig => {
+  // Detect if we are in the build phase (where some env vars might be missing)
   const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
   const MONGODB_URI = process.env.MONGODB_URI || '';
@@ -62,6 +63,8 @@ const loadEnv = (): EnvConfig => {
     '';
   const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
   const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+  
+  // Pusher config
   const PUSHER_APP_ID = process.env.PUSHER_APP_ID || '';
   const PUSHER_KEY = process.env.NEXT_PUBLIC_PUSHER_KEY || process.env.PUSHER_KEY || '';
   const PUSHER_SECRET = process.env.PUSHER_SECRET || '';
@@ -69,8 +72,11 @@ const loadEnv = (): EnvConfig => {
 
   // Only throw during actual runtime — not during `next build`
   if (!isBuildPhase) {
-    if (!MONGODB_URI) throw new Error('❌ FATAL: Missing environment variable MONGODB_URI');
-    if (!JWT_SECRET) throw new Error('❌ FATAL: Missing environment variable JWT_SECRET');
+    if (!MONGODB_URI) throw new Error('MONGODB_URI is not defined');
+    if (!JWT_SECRET) throw new Error('JWT_SECRET is not defined');
+    if (!PUSHER_APP_ID || !PUSHER_KEY || !PUSHER_SECRET) {
+      console.warn("⚠️ [ENV_WARN] Pusher configuration is incomplete. Real-time features may be disabled.");
+    }
   }
 
   return {
@@ -90,5 +96,4 @@ const loadEnv = (): EnvConfig => {
   };
 };
 
-// Eagerly evaluate — safe now because we skip validation during build phase
 export const env = loadEnv();
