@@ -59,7 +59,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     socket.on('SETTINGS_UPDATED', handleSettingsUpdate);
 
     // Specific maintenance events
-    socket.on('MAINTENANCE_MODE', (data) => {
+    socket.on('MAINTENANCE_MODE', (data: any) => {
       console.log('🔴 [MAINTENANCE_MODE] Triggered');
       setSettings((prev: any) => ({
         ...prev,

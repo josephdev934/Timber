@@ -42,7 +42,7 @@ export class SocketService {
   /**
    * Broadcast to EVERYONE (Global Channel)
    */
-  static emitGlobal(event: string, payload: any) {
+  static emitGlobal(event: string, payload: any = {}) {
     this.emitToRoom('global', event, payload);
   }
 }
