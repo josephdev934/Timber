@@ -28,6 +28,11 @@ export interface EnvConfig {
   CLOUDINARY_CLOUD_NAME: string;
   CLOUDINARY_API_KEY: string;
   CLOUDINARY_API_SECRET: string;
+  // Pusher Configuration
+  PUSHER_APP_ID: string;
+  PUSHER_KEY: string;
+  PUSHER_SECRET: string;
+  PUSHER_CLUSTER: string;
 }
 
 /**
@@ -57,6 +62,10 @@ const loadEnv = (): EnvConfig => {
     '';
   const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
   const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+  const PUSHER_APP_ID = process.env.PUSHER_APP_ID || '';
+  const PUSHER_KEY = process.env.NEXT_PUBLIC_PUSHER_KEY || process.env.PUSHER_KEY || '';
+  const PUSHER_SECRET = process.env.PUSHER_SECRET || '';
+  const PUSHER_CLUSTER = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2';
 
   // Only throw during actual runtime — not during `next build`
   if (!isBuildPhase) {
@@ -74,6 +83,10 @@ const loadEnv = (): EnvConfig => {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET,
+    PUSHER_APP_ID,
+    PUSHER_KEY,
+    PUSHER_SECRET,
+    PUSHER_CLUSTER,
   };
 };
 

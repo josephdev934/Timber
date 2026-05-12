@@ -86,6 +86,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for global settings updates
     const socket = socketClient.getInstance();
+    socketClient.joinRoom('global');
+    
     const handleSettingsUpdate = (data: any) => {
       console.log(`[REALTIME_SETTINGS_SYNC] Section: ${data.section}`);
       setSettings(data.settings);

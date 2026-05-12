@@ -1,132 +1,129 @@
-import { io, Socket } from 'socket.io-client';
+import Pusher, { Channel } from 'pusher-js';
 
 /**
  * ==========================================
- * INFRASTRUCTURE LAYER - CLIENT SOCKET UTILITY
+ * INFRASTRUCTURE LAYER - PUSHER CLIENT
  * ==========================================
- * Production-grade client-side socket management.
- * Features:
- * - Singleton pattern to prevent duplicate connections.
- * - Automatic room re-joining on reconnection.
- * - Centralized event handling.
+ * Replaces Socket.io-client with Pusher.
+ * Maintains a similar API to minimize component refactoring.
  * ==========================================
  */
 
-class SocketClient {
-  private static instance: Socket | null = null;
-  private static activeRooms: Set<string> = new Set();
+class PusherClient {
+  private static instance: Pusher | null = null;
+  private static channels: Map<string, Channel> = new Map();
+  private static callbacks: Map<string, Set<Function>> = new Map();
 
   /**
-   * Initialize or return the existing socket instance.
+   * Initialize or return the existing Pusher instance.
    */
-  public static getInstance(url: string = process.env.NEXT_PUBLIC_APP_URL || ''): Socket {
-    if (this.instance) return this.instance;
+  public static getInstance(): any {
+    if (!this.instance) {
+      const key = process.env.NEXT_PUBLIC_PUSHER_KEY || '';
+      const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2';
 
-    console.log(`[SOCKET_CLIENT_INIT] Connecting to ${url}...`);
-
-    this.instance = io(url, {
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-      autoConnect: true,
-    });
-
-    this.setupInternalHandlers();
-    return this.instance;
-  }
-
-  /**
-   * Setup core lifecycle handlers (reconnect, error, etc.)
-   */
-  private static setupInternalHandlers() {
-    if (!this.instance) return;
-
-    this.instance.on('connect', () => {
-      console.log(`[SOCKET_CLIENT_CONNECTED] socketId: ${this.instance?.id}`);
-      
-      // CRITICAL: Rejoin all previously joined rooms on reconnect
-      if (this.activeRooms.size > 0) {
-        console.log(`[SOCKET_CLIENT_REJOINING] Rejoining ${this.activeRooms.size} rooms...`);
-        this.activeRooms.forEach(room => {
-          this.instance?.emit('join_room', room);
-        });
+      if (!key) {
+        console.warn("[PUSHER_CLIENT] Key missing. Real-time features disabled.");
       }
-    });
 
-    this.instance.on('disconnect', (reason) => {
-      console.warn(`[SOCKET_CLIENT_DISCONNECTED] reason: ${reason}`);
-      this.activeRooms.clear(); // Important: Reset local room state on disconnect
-    });
+      this.instance = new Pusher(key, {
+        cluster,
+        forceTLS: true,
+        // Authentication endpoint for private channels
+        authEndpoint: '/api/pusher/auth',
+        auth: {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('timber_token')}`
+          }
+        }
+      });
 
-    this.instance.on('connect_error', (error) => {
-      console.error(`[SOCKET_CLIENT_ERROR] Connection failed: ${error.message}`);
-    });
+      console.log("[PUSHER_CLIENT_INIT] Connected to Pusher.");
+    }
 
-    this.instance.on('reconnect_attempt', (attempt) => {
-      console.log(`[SOCKET_CLIENT_RECONNECTING] Attempt #${attempt}`);
-    });
+    // Return a "socket-like" object to satisfy existing component usage
+    return {
+      on: (event: string, cb: Function) => this.on(event, cb),
+      off: (event: string, cb: Function) => this.off(event, cb),
+      emit: (event: string, data: any) => this.emit(event, data),
+    };
   }
 
   /**
-   * Safe wrapper for joining rooms.
-   * Tracks rooms to ensure they are rejoined on reconnect.
+   * Listen for an event globally (across all subscribed channels)
    */
-  public static joinRoom(roomId: string) {
-    const socket = this.getInstance();
-    if (!this.activeRooms.has(roomId)) {
-      this.activeRooms.add(roomId);
-      socket.emit('join_room', roomId);
-      console.log(`[SOCKET_CLIENT_JOIN] Room: ${roomId}`);
+  private static on(event: string, cb: Function) {
+    if (!this.callbacks.has(event)) {
+      this.callbacks.set(event, new Set());
+    }
+    this.callbacks.get(event)!.add(cb);
+  }
+
+  /**
+   * Stop listening for an event
+   */
+  private static off(event: string, cb: Function) {
+    this.callbacks.get(event)?.delete(cb);
+  }
+
+  /**
+   * Emit a client event (e.g., typing indicators)
+   * Note: Pusher requires events triggered by clients to be prefixed with 'client-'
+   * and can only be sent on private/presence channels.
+   */
+  private static emit(event: string, data: any) {
+    // For typing indicators specifically, we map to a Pusher client event
+    if (event === 'chat:typing' || event === 'USER_TYPING') {
+      const chatId = data.chatId;
+      const channelName = `private-chat_${chatId}`;
+      const channel = this.channels.get(channelName);
+      
+      if (channel) {
+        // Pusher client events must start with client-
+        channel.trigger(`client-${event}`, data);
+      }
     }
   }
 
   /**
-   * Safe wrapper for leaving rooms.
+   * Subscribe to a channel (Room in Socket.io terms)
    */
-  public static leaveRoom(roomId: string) {
-    const socket = this.getInstance();
-    if (this.activeRooms.has(roomId)) {
-      this.activeRooms.delete(roomId);
-      socket.emit('leave_room', roomId);
-      console.log(`[SOCKET_CLIENT_LEAVE] Room: ${roomId}`);
+  public static subscribe(channelName: string) {
+    if (!this.instance) this.getInstance();
+    
+    // Prefix with 'private-' for security and client events
+    const fullChannelName = channelName.startsWith('private-') ? channelName : `private-${channelName}`;
+
+    if (!this.channels.has(fullChannelName)) {
+      const channel = this.instance!.subscribe(fullChannelName);
+      this.channels.set(fullChannelName, channel);
+
+      // Bind to ALL events on this channel and dispatch to our global callbacks
+      channel.bind_global((event: string, data: any) => {
+        // Handle client-prefixed events (typing indicators)
+        const cleanEvent = event.startsWith('client-') ? event.replace('client-', '') : event;
+        
+        this.callbacks.get(cleanEvent)?.forEach(cb => cb(data));
+      });
+
+      console.log(`[PUSHER_SUBSCRIBE] Channel: ${fullChannelName}`);
     }
   }
 
-  /**
-   * Specific wrapper for private chat rooms.
-   * Tracks chatId and emits 'join_chat'
-   */
-  public static joinChat(chatId: string) {
-    const socket = this.getInstance();
-    const roomId = `chat:${chatId}`;
-    if (!this.activeRooms.has(roomId)) {
-      this.activeRooms.add(roomId);
-      socket.emit('join_chat', { chatId });
-      console.log(`[SOCKET_CLIENT_JOIN_CHAT] ChatId: ${chatId}`);
+  public static unsubscribe(channelName: string) {
+    const fullChannelName = channelName.startsWith('private-') ? channelName : `private-${channelName}`;
+    if (this.channels.has(fullChannelName)) {
+      this.instance?.unsubscribe(fullChannelName);
+      this.channels.delete(fullChannelName);
+      console.log(`[PUSHER_UNSUBSCRIBE] Channel: ${fullChannelName}`);
     }
   }
 
-  /**
-   * Specific wrapper for personal notification rooms.
-   */
-  public static joinUser(userId: string) {
-    const socket = this.getInstance();
-    const roomId = `user:${userId}`;
-    if (!this.activeRooms.has(roomId)) {
-      this.activeRooms.add(roomId);
-      socket.emit('join_user', { userId });
-      console.log(`[SOCKET_CLIENT_JOIN_USER] UserId: ${userId}`);
-    }
-  }
-
-  /**
-   * Get raw socket instance if needed.
-   */
-  public static getSocket(): Socket | null {
-    return this.instance;
-  }
+  // Compatibility aliases
+  public static joinRoom(room: string) { this.subscribe(room); }
+  public static leaveRoom(room: string) { this.unsubscribe(room); }
+  public static joinChat(chatId: string) { this.subscribe(`chat_${chatId}`); }
+  public static joinUser(userId: string) { this.subscribe(`user_${userId}`); }
 }
 
-export const socketClient = SocketClient;
+export const socketClient = PusherClient;

@@ -1,6 +1,6 @@
-import { socketServer } from './socketServer';
 import { buildChatRoom } from './roomUtils';
 import { AdminEventBus, ADMIN_BUS_EVENTS } from '../events/AdminEventBus';
+import { SocketService } from './SocketService';
 
 /**
  * ==========================================
@@ -36,50 +36,31 @@ export class MessageEventEmitter {
    * Safe emission for private/group messages
    */
   static emitMessageCreated(chatId: string, data: MessageEventPayload) {
-    let roomId = "unknown";
     const eventName = MESSAGE_EVENTS.MESSAGE_CREATED;
 
     try {
-      roomId = buildChatRoom(chatId);
-      const io = socketServer.getIO();
-
-      if (!io) {
-        console.warn(`[SOCKET_SKIPPED] [PID: ${process.pid}] Socket not initialized | event: ${eventName} | roomId: ${roomId}`);
-        return;
-      }
-      
-      io.to(roomId).emit(eventName, data);
-     
-      console.log(`[SOCKET_EMIT_SUCCESS] [PID: ${process.pid}] ${eventName} | roomId: ${roomId}`);
+      SocketService.emitToRoom(buildChatRoom(chatId), eventName, data);
       
       // Feed Admin Bus (Phase 2)
       AdminEventBus.publish(ADMIN_BUS_EVENTS.MESSAGE_CREATED, data);
     } catch (error: any) {
-      console.error(`[SOCKET_EMIT_FAILED_SAFE] [PID: ${process.pid}] ${eventName} | roomId: ${roomId} | error: ${error.message}`);
+      console.error(`[PUSHER_EMIT_FAILED_SAFE] [PID: ${process.pid}] ${eventName} | chatId: ${chatId} | error: ${error.message}`);
     }
   }
 
   static emitMessageUpdated(chatId: string, messageId: string, text: string) {
     try {
-      const roomId = buildChatRoom(chatId);
-      const io = socketServer.getIO();
-      if (!io) return;
-      
-      io.to(roomId).emit(MESSAGE_EVENTS.MESSAGE_UPDATED, { messageId, chatId, text });
+      SocketService.emitToRoom(buildChatRoom(chatId), MESSAGE_EVENTS.MESSAGE_UPDATED, { messageId, chatId, text });
     } catch (error: any) {
-      console.error(`[SOCKET_EMIT_FAILED_SAFE] MESSAGE_UPDATED | error: ${error.message}`);
+      console.error(`[PUSHER_EMIT_FAILED_SAFE] MESSAGE_UPDATED | error: ${error.message}`);
     }
   }
 
   static emitMessageDeleted(chatId: string, messageId: string) {
     try {
-      const roomId = buildChatRoom(chatId);
-      const io = socketServer.getIO();
-      if (!io) return;
-      
-      io.to(roomId).emit(MESSAGE_EVENTS.MESSAGE_DELETED, { messageId, chatId });
+      SocketService.emitToRoom(buildChatRoom(chatId), MESSAGE_EVENTS.MESSAGE_DELETED, { messageId, chatId });
     } catch (error: any) {
-      console.error(`[SOCKET_EMIT_FAILED_SAFE] MESSAGE_DELETED | error: ${error.message}`);
+      console.error(`[PUSHER_EMIT_FAILED_SAFE] MESSAGE_DELETED | error: ${error.message}`);
     }
   }
   
@@ -89,15 +70,9 @@ export class MessageEventEmitter {
   static emitMessagesRead(chatId: string, userId: string) {
     const eventName = 'MESSAGES_READ';
     try {
-      const roomId = buildChatRoom(chatId);
-      const io = socketServer.getIO();
-
-      if (!io) return;
-      
-      io.to(roomId).emit(eventName, { chatId, userId });
-      console.log(`[SOCKET_EMIT_SUCCESS] ${eventName} | roomId: ${roomId}`);
+      SocketService.emitToRoom(buildChatRoom(chatId), eventName, { chatId, userId });
     } catch (error: any) {
-      console.error(`[SOCKET_EMIT_FAILED_SAFE] ${eventName} | error: ${error.message}`);
+      console.error(`[PUSHER_EMIT_FAILED_SAFE] ${eventName} | error: ${error.message}`);
     }
   }
 }

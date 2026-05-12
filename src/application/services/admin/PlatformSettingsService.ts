@@ -64,14 +64,15 @@ export class PlatformSettingsService {
     }
 
     // Global real-time settings update
-    socketServer.getIO()?.emit('SETTINGS_UPDATED', { section, settings });
+    const { SocketService } = await import('../../../infrastructure/socket/SocketService');
+    SocketService.emitGlobal('SETTINGS_UPDATED', { section, settings });
 
     // Specific maintenance broadcasts for the public frontend
     if (section === 'maintenance') {
       if (data.enabled) {
-        socketServer.getIO()?.emit('MAINTENANCE_MODE', { message: data.message });
+        SocketService.emitGlobal('MAINTENANCE_MODE', { message: data.message });
       } else {
-        socketServer.getIO()?.emit('MAINTENANCE_ENDED');
+        SocketService.emitGlobal('MAINTENANCE_ENDED');
       }
     }
 
