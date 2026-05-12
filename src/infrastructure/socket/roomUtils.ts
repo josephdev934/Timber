@@ -59,12 +59,12 @@ export function buildContentRoom(contentId: any): string {
     const id = normalizeId(contentId);
 
     // Prevent double prefix (safely check if it's a string first, though normalizeId guarantees it)
-    if (typeof id === 'string' && id.startsWith("content:")) {
-      // If it's "content:content:id", we want to strip the extras
-      return `content:${id.replace(/^content:/, '').replace(/^content:/, '')}`;
+    if (typeof id === 'string' && id.startsWith("content_")) {
+      // If it's "content_content_id", we want to strip the extras
+      return `content_${id.replace(/^content_/, '').replace(/^content_/, '')}`;
     }
 
-    return `content:${id}`;
+    return `content_${id}`;
   } catch (err: any) {
     console.error(`[ROOM_ERROR] Failed to build content room: ${err.message}`, { input: contentId });
     throw err;
@@ -79,10 +79,10 @@ export function buildUserRoom(userId: any): string {
   try {
     const id = normalizeId(userId);
 
-    if (typeof id === 'string' && id.startsWith("user:")) {
-      return `user:${id.replace(/^user:/, '')}`;
+    if (typeof id === 'string' && id.startsWith("user_")) {
+      return `user_${id.replace(/^user_/, '')}`;
     }
-    return `user:${id}`;
+    return `user_${id}`;
   } catch (err: any) {
     console.error(`[ROOM_ERROR] Failed to build user room: ${err.message}`, { input: userId });
     throw err;
@@ -97,10 +97,10 @@ export function buildChatRoom(chatId: any): string {
   try {
     const id = normalizeId(chatId);
 
-    if (typeof id === 'string' && id.startsWith("chat:")) {
-      return `chat:${id.replace(/^chat:/, '')}`;
+    if (typeof id === 'string' && id.startsWith("chat_")) {
+      return `chat_${id.replace(/^chat_/, '')}`;
     }
-    return `chat:${id}`;
+    return `chat_${id}`;
   } catch (err: any) {
     console.error(`[ROOM_ERROR] Failed to build chat room: ${err.message}`, { input: chatId });
     throw err;

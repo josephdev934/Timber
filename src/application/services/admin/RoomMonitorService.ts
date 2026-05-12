@@ -53,9 +53,9 @@ export class RoomMonitorService {
   private static trackRoomEvent(eventName: string, payload: any) {
     let roomId = null;
 
-    if (payload?.contentId) roomId = `content:${payload.contentId}`;
-    else if (payload?.chatId) roomId = `chat:${payload.chatId}`;
-    else if (payload?.groupId) roomId = `group:${payload.groupId}`;
+    if (payload?.contentId) roomId = `content_${payload.contentId}`;
+    else if (payload?.chatId) roomId = `chat_${payload.chatId}`;
+    else if (payload?.groupId) roomId = `group_${payload.groupId}`;
 
     if (roomId) {
       this.roomEvents.set(roomId, {
@@ -78,12 +78,12 @@ export class RoomMonitorService {
       // Iterate through Socket.IO rooms
       rooms.forEach((socketSet, roomId) => {
         // Filter out private socket-id rooms and admin rooms
-        if (roomId.startsWith('content:') || roomId.startsWith('chat:') || roomId.startsWith('group:')) {
+        if (roomId.startsWith('content_') || roomId.startsWith('chat_') || roomId.startsWith('group_')) {
           
           let type = 'unknown';
-          if (roomId.startsWith('content:')) type = 'content';
-          if (roomId.startsWith('chat:')) type = 'chat';
-          if (roomId.startsWith('group:')) type = 'group';
+          if (roomId.startsWith('content_')) type = 'content';
+          if (roomId.startsWith('chat_')) type = 'chat';
+          if (roomId.startsWith('group_')) type = 'group';
 
           const eventState = this.roomEvents.get(roomId);
 

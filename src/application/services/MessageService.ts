@@ -35,7 +35,15 @@ export class MessageService {
 
     try {
       const { ConversationModel } = await import('@/infrastructure/db/models/Conversation');
-      const convCheck = await ConversationModel.findById(targetChatId).lean() as any;
+      const { UserRepository } = await import('@/infrastructure/repositories/UserRepository');
+
+      // 1. Run all independent lookups in parallel
+      const [convCheck, mentionedIds, sender] = await Promise.all([
+        ConversationModel.findById(targetChatId).lean() as Promise<any>,
+        parseMentions(data.text),
+        UserRepository.findById(data.senderId)
+      ]);
+
       if (convCheck) {
          const isParticipant = convCheck.participants?.some((p: any) => p.toString() === data.senderId);
          if (!isParticipant) {
@@ -43,8 +51,7 @@ export class MessageService {
          }
       }
 
-      const mentionedIds = await parseMentions(data.text);
-
+      // 2. Create the message
       const message = await MessageRepository.create({
         chatId: targetChatId,
         senderId: data.senderId,
@@ -56,33 +63,26 @@ export class MessageService {
         mediaType: data.mediaType
       });
 
-      try {
-        // Fetch sender details to include in socket event
-        const { UserRepository } = await import('@/infrastructure/repositories/UserRepository');
-        const sender = await UserRepository.findById(data.senderId);
-
-        MessageEventEmitter.emitMessageCreated(targetChatId as string, {
-          messageId: message.id,
-          chatId: message.chatId,
-          senderId: data.senderId,
-          senderName: sender?.name || sender?.username || "Unknown",
-          text: message.text,
-          replyTo: message.replyTo,
-          mediaUrl: message.mediaUrl,
-          mediaType: message.mediaType,
-          createdAt: message.createdAt.toISOString()
-        });
+      // 3. Emit real-time event IMMEDIATELY
+      MessageEventEmitter.emitMessageCreated(targetChatId as string, {
+        messageId: message.id,
+        chatId: message.chatId,
+        senderId: data.senderId,
+        senderName: sender?.name || sender?.username || "Unknown",
+        text: message.text,
+        replyTo: message.replyTo,
+        mediaUrl: message.mediaUrl,
+        mediaType: message.mediaType,
+        createdAt: message.createdAt.toISOString()
+      });
 
         // NOTIFICATION: Notify all other participants in the conversation
         try {
-          const { ConversationModel } = await import('@/infrastructure/db/models/Conversation');
-          const conv = await ConversationModel.findById(targetChatId).lean() as any;
-          
-          if (conv && conv.participants) {
+          if (convCheck && convCheck.participants) {
             const { NotificationService } = await import('../../application/services/NotificationService');
-            const otherParticipants = conv.participants.filter((p: any) => p.toString() !== data.senderId);
+            const otherParticipants = convCheck.participants.filter((p: any) => p.toString() !== data.senderId);
             
-            console.log(`[NOTIFICATION_DEBUG] ChatId: ${targetChatId} | Type: ${conv.type} | Notifying: ${otherParticipants.length} users`);
+            console.log(`[NOTIFICATION_DEBUG] ChatId: ${targetChatId} | Type: ${convCheck.type} | Notifying: ${otherParticipants.length} users`);
 
             await Promise.all(otherParticipants.map((pId: any) => {
               const recipientId = pId.toString();
@@ -94,7 +94,7 @@ export class MessageService {
                 userId: recipientId,
                 actorId: data.senderId,
                 type: 'message',
-                message: `sent a message${conv.type === 'group' ? ` to ${conv.name || 'the group'}` : ''}: "${textPreview}${textSuffix}"`,
+                message: `sent a message${convCheck.type === 'group' ? ` to ${convCheck.name || 'the group'}` : ''}: "${textPreview}${textSuffix}"`,
                 metadata: { chatId: targetChatId as string }
               }).catch(err => console.error("[NOTIFICATION_FAILED_SAFE] message", err));
             }));

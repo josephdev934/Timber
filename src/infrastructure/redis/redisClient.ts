@@ -65,15 +65,21 @@ const redisClient = global.redisClientInstance;
 
 /**
  * Safe client accessor with lazy connection.
- * Fail-safe: Returns null if connection fails instead of throwing.
+ * Fail-fast: Returns quickly if connection fails instead of hanging.
  */
 export async function getRedisClient(): Promise<RedisClientType> {
   if (!redisClient.isOpen) {
     try {
-      await redisClient.connect();
+      // Add a 2-second timeout to the connection attempt to prevent app/middleware hangs
+      const connectPromise = redisClient.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Redis connection timeout")), 2000)
+      );
+
+      await Promise.race([connectPromise, timeoutPromise]);
     } catch (err) {
-      console.error("🔴 Redis: Initial connection failed", err);
-      // We still return the client; the library will handle reconnection based on strategy
+      console.error("🔴 Redis: Initial connection failed or timed out", err);
+      // We still return the client; the library will handle reconnection background attempts
     }
   }
   return redisClient;

@@ -41,9 +41,9 @@ export class SocketEventStreamer {
     
     // Derive metadata for logs
     let roomId = "system";
-    if (payload?.contentId) roomId = `content:${payload.contentId}`;
-    else if (payload?.chatId) roomId = `chat:${payload.chatId}`;
-    else if (payload?.groupId) roomId = `group:${payload.groupId}`;
+    if (payload?.contentId) roomId = `content_${payload.contentId}`;
+    else if (payload?.chatId) roomId = `chat_${payload.chatId}`;
+    else if (payload?.groupId) roomId = `group_${payload.groupId}`;
 
     const eventRecord = {
       eventName: event,

@@ -3,6 +3,8 @@ import { protectRoute } from '@/infrastructure/security/authMiddleware';
 import { UserModel } from '@/infrastructure/db/models/User';
 import { connectToDatabase } from '@/infrastructure/db/connect';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * ==========================================
  * ADMIN API - GET /api/admin/users
@@ -12,6 +14,7 @@ import { connectToDatabase } from '@/infrastructure/db/connect';
  */
 export async function GET(req: NextRequest) {
   try {
+    console.log("[ADMIN_USERS_FETCH] Starting request...");
     // 1. Guard
     await protectRoute(req, ['admin']);
 
@@ -21,6 +24,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all'; // all, active, banned
+    const role = searchParams.get('role') || 'all';
 
     const offset = (page - 1) * limit;
 
@@ -42,6 +46,10 @@ export async function GET(req: NextRequest) {
       query.isBanned = false;
     }
 
+    if (role !== 'all') {
+      query.role = role;
+    }
+
     // 4. Fetch
     const [users, total] = await Promise.all([
       UserModel.find(query)
@@ -52,6 +60,8 @@ export async function GET(req: NextRequest) {
         .lean(),
       UserModel.countDocuments(query)
     ]);
+    
+    console.log(`[ADMIN_USERS_FETCH] Found ${total} users for query:`, JSON.stringify(query));
 
     return NextResponse.json({
       users,
