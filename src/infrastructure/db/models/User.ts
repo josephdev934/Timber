@@ -42,4 +42,4 @@ const UserSchema = new Schema<IUserDocument>({
 });
 
 // Guard to prevent Next.js from recompiling duplicate models
-export const UserModel = mongoose.models.User || mongoose.model<IUserDocument>('User', UserSchema);
+export const UserModel = mongoose.models.User || mongoose.model<IUserDocument>('User', UserSchema, 'users');
