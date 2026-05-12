@@ -32,9 +32,15 @@ export async function middleware(req: NextRequest) {
   // We use an internal API call because Redis clients are often incompatible with Edge Runtime.
   // The API route handles the Redis logic in the Node.js runtime.
   try {
+    // Add a 1.5s signal timeout to prevent middleware hangs
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+
     const maintRes = await fetch(`${req.nextUrl.origin}/api/admin/maintenance/check`, {
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (maintRes.ok) {
       const { enabled, message } = await maintRes.json();
       
