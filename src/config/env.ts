@@ -1,3 +1,5 @@
+import 'server-only';
+
 /**
  * ==========================================
  * CONFIGURATION LAYER - ENVIRONMENT SETUP
